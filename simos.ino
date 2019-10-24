@@ -3,8 +3,8 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <SoftwareSerial.h>
-#include "funcs/serial.cpp"
-#include "funcs/sh.cpp"
+#include "sys/serial.cpp"
+#include "sys/sh.cpp"
 
 typedef struct file_{
   unsigned char flag;
