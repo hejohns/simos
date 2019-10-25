@@ -9,7 +9,7 @@
 
 typedef struct file_{
   unsigned char flag;
-  unsigned char file[1024];
+  unsigned char file[1023];
 } file;
 
 char serialBuf[SERIAL_BUF_SIZE];

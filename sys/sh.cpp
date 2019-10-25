@@ -9,7 +9,10 @@ void shGetInput(char* buf, unsigned char bufSize)
 void sh(char* buf, unsigned char bufSize)
 {
   unsigned char i=0;
-  unsigned char space;
+  unsigned char j=0;
+  unsigned char space[SERIAL_BUF_SIZE/4];
+  for(int k=0; k<SERIAL_BUF_SIZE/4; k++){
+  space[k]='\0';}
   unsigned char cmd[SERIAL_BUF_SIZE];
   while(i < bufSize)
   {
@@ -17,14 +20,18 @@ void sh(char* buf, unsigned char bufSize)
     {
       cmd[i]=buf[i];
       i++;
+      continue;
     }
     else if(buf[i]==' ')
     {
-      space=i;
+      space[j]=i;
+      j++;
       i++;
+      continue;
     }
     else if(buf[i]=='\0')
     {
+      cmd[i] = '\0';
       return;
     }
     else
@@ -33,4 +40,6 @@ void sh(char* buf, unsigned char bufSize)
       return;
     }
   }
+  serialPrint(cmd);
+  serialPrint('\n');
 }
