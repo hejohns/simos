@@ -3,17 +3,17 @@ void shGetInput(char* buf, unsigned char bufSize)
   serialPrint("> ");
   serialRead(buf, bufSize);
   serialPrint(buf);
-  serialPrint((const char*)"\n");
+  serialPrint("\n");
 }
 
 void ramDump()
 {
-  serialPrint((const char*)"\n");
-  for(char* i=0; i<8191; i++)
+  serialPrint("\n");
+  for(char* i=0x0; i<8191; i++)
   {
     Serial.write(*i);
   }
-  serialPrint((const char*)"\n");
+  serialPrint("\n");
   Serial.flush();
 }
 
@@ -25,7 +25,8 @@ void sh(char* buf, unsigned char bufSize)
   for(int k=0; k<SERIAL_BUF_SIZE/4; k++){
   space[k]='\0';}
   unsigned char cmd[SERIAL_BUF_SIZE];
-  serialPrint("sh running\n");
+  serialPrint(buf);
+  serialPrint("\n");
   while(i < bufSize)
   {
     if(buf[i]>=33 && buf[i]<=126)

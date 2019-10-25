@@ -25,8 +25,9 @@ void setup()
   }
   serialFlush();
   serialPrint("Booting...\n");
-  for(unsigned int i=0; i<1000000; i++)
+  for(unsigned long long i=0; i<1000000; i++)
   {
+    char throw = i%2;
     continue;
   }
   serialPrint("Done!\n");
