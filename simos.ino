@@ -4,6 +4,9 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <SoftwareSerial.h>
+#include <stdio.h>
+#include <string.h>
+#include <setjmp.h>
 #include "sys/serial.cpp"
 #include "sys/sh.cpp"
 
@@ -27,7 +30,6 @@ void setup()
   serialPrint("Booting...\n");
   for(unsigned long long i=0; i<1000000; i++)
   {
-    char throw = i%2;
     continue;
   }
   serialPrint("Done!\n");
@@ -36,6 +38,5 @@ void setup()
 void loop()
 {
   shGetInput(serialBuf, SERIAL_BUF_SIZE);
-  ramDump();
   sh(serialBuf, SERIAL_BUF_SIZE);
 }
