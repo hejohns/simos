@@ -25,7 +25,7 @@ void setup()
   }
   serialFlush();
   serialPrint("Booting...\n");
-  for(unsigned char i=0; i<255; i++)
+  for(unsigned int i=0; i<1000000; i++)
   {
     continue;
   }

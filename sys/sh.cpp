@@ -3,15 +3,17 @@ void shGetInput(char* buf, unsigned char bufSize)
   serialPrint("> ");
   serialRead(buf, bufSize);
   serialPrint(buf);
-  serialPrint("\n");
+  serialPrint((const char*)"\n");
 }
 
 void ramDump()
 {
+  serialPrint((const char*)"\n");
   for(char* i=0; i<8191; i++)
   {
     Serial.write(*i);
   }
+  serialPrint((const char*)"\n");
   Serial.flush();
 }
 
@@ -42,11 +44,12 @@ void sh(char* buf, unsigned char bufSize)
     else if(buf[i]=='\0')
     {
       cmd[i] = '\0';
-      return;
+      break;
     }
     else
     {
       serialPrint("Panic!\n");
+      Serial.write(buf[i]);
       return;
     }
   }
