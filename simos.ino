@@ -7,17 +7,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <setjmp.h>
+#include "sys/fs.cpp"
 #include "sys/serial.cpp"
 #include "sys/sh.cpp"
 
-typedef struct file_{
-  unsigned char flag;
-  unsigned char file[1023];
-} file;
-
 char serialBuf[SERIAL_BUF_SIZE];
 unsigned short eeprom_addr=0;
-file test;
 
 void setup()
 {

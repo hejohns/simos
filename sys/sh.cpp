@@ -31,6 +31,10 @@ unsigned char isAlphanumeric(char c)
   }
 }
 
+unsigned char edit(char* file)
+{
+}
+
 void sh(char* buf, unsigned char bufSize)
 {
   char cmd[MAX_ARGUMENTS][SERIAL_BUF_SIZE];
