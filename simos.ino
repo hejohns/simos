@@ -1,4 +1,5 @@
 #define SERIAL_BUF_SIZE 64
+#define SERIAL_BAUD_RATE 9600
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -17,7 +18,7 @@ file test;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(SERIAL_BAUD_RATE);
   while(!Serial)
   {
     continue; 
