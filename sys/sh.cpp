@@ -6,6 +6,15 @@ void shGetInput(char* buf, unsigned char bufSize)
   serialPrint("\n");
 }
 
+void ramDump()
+{
+  for(char* i=0; *i!=0; i++)
+  {
+    Serial.write(*i);
+  }
+  Serial.flush();
+}
+
 void sh(char* buf, unsigned char bufSize)
 {
   unsigned char i=0;

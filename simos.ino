@@ -25,7 +25,7 @@ void setup()
   }
   serialFlush();
   serialPrint("Booting...\n");
-  for(unsigned char i=0; i<64000; i++)
+  for(unsigned char i=0; i<256; i++)
   {
     continue;
   }
@@ -35,5 +35,6 @@ void setup()
 void loop()
 {
   shGetInput(serialBuf, SERIAL_BUF_SIZE);
+  ramDump();
   sh(serialBuf, SERIAL_BUF_SIZE);
 }
