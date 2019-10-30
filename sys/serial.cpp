@@ -1,3 +1,6 @@
+#define SERIAL_BUF_SIZE 64
+#define SERIAL_BAUD_RATE 9600
+
 void serialFlush()
 {
   while(Serial.available()>0)
@@ -6,14 +9,7 @@ void serialFlush()
     }
 }
 
-void serialPrint(char* str)
-{
-  for(unsigned char i=0; str[i] != '\0'; i++)
-  {
-    Serial.write(str[i]);
-  }
-  Serial.flush();
-}
+#define serialPrint(x) Serial.print(x); Serial.flush()
 
 void serialRead(char* buf, unsigned char bufSize)
 {

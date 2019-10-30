@@ -11,12 +11,13 @@ void shGetInput(char* buf, unsigned char bufSize)
 void ramDump()
 {
   serialPrint("\n");
-  for(char* i=0x0; i<8191; i++)
+  for(uint8_t* i=0x0000; i<RAMEND-1; i++)
   {
     Serial.write(*i);
   }
   serialPrint("\n");
   Serial.flush();
+  taskTerminate(kernel.running);
 }
 
 unsigned char isAlphanumeric(char c)
