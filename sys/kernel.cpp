@@ -198,17 +198,16 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 	kernel.tasks[kernel.running].sp = SP;
 	uint8_t runNext;
 	//pop terminated tasks off kernel task stack
-	/*
 	for(int8_t i=kernel.nbrOfTasks-1; i>=0; i--){
 		task* taskN = &kernel.tasks[i];
 		if(taskN->state == terminated){
 			taskDestroy(i);
-			continue;}
+			continue;
+		}
 		else{
 			break;
 		}
 	}
-	*/
 	//Round Robin scheduler
 	if(kernel.nbrOfTasks <= 0){
 		panic();

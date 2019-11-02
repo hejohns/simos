@@ -6,61 +6,53 @@
 #include <string.h>
 #include "sys/fs.cpp"
 #include "sys/serial.cpp"
-void testFunc2()
-{
-	for(uint16_t i=0; ; i++)
-	{
-		serialPrint(i);
-		serialPrint("!\n");
-	}
-}
-void testFunc()
-{
-	for(uint16_t i=0; ; i++)
-	{
-		serialPrint(i);
-		serialPrint("?\n");
-	}
-}
-void taskCreate(void(* func)(void*), uint16_t stacksize, char* args);
-void ramDump();
-void boot();
-#include "sys/kernel.cpp"
+#include "sys/tasks.cpp"
+#include "sys/kernel.h"
 #include "sys/sh.cpp"
+#include "sys/kernel.cpp"
 
 char serialBuf[SERIAL_BUF_SIZE];
 //unsigned short eeprom_addr=0;
+
+void boot();
 
 void setup()
 {
 	cli(); //disable interrupts
 	Serial.begin(SERIAL_BAUD_RATE);
-	while(!Serial)
-	{
+	//wait for serial to initialize
+	while(!Serial){
 		continue; 
 	}
+	//flush buffer
 	while(Serial.available()>0){
 		char tmp = Serial.read();
 	}
 	Serial.print("Initializing kernel...\n");
 	kernelInit();
-	Serial.print("Done!\n");
-	Serial.flush();
 	taskCreate(&boot, (uint16_t)512, (char*)0);
 	kernel.taskRaw2Running(0);
 }
 
 void boot()
 {
+	Serial.print("Done!\n");
+	Serial.flush();
 	sei();//set enabled interrupts. Sets global interrupt mask.
 	taskCreate(&testFunc, 256, (char*)0);
 	taskCreate(&testFunc2, 256, (char*)0);
-	for(uint16_t i=0; ; i++)
+	taskCreate(&testFunc3, 256, (char*)0);
+	for(uint16_t i=0; i<200; i++)
 	{
 		serialPrint(i);
 		serialPrint('\n');
 	}
+	//taskTerminate(1);
+	taskTerminate(3);
 	//call sh
+	while(true){
+		continue;
+	}
 }
 
 void loop()
