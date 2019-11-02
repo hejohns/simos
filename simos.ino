@@ -39,14 +39,15 @@ void setup()
 	{
 		continue; 
 	}
-	serialFlush();
-	serialPrint("Initializing kernel...\n");
+	while(Serial.available()>0){
+		char tmp = Serial.read();
+	}
+	Serial.print("Initializing kernel...\n");
 	kernelInit();
-	serialPrint("Done!\n");
-	cli();
+	Serial.print("Done!\n");
+	Serial.flush();
 	taskCreate(&boot, (uint16_t)512, (char*)0);
-	taskRaw2Running(0);
-	asm("ijmp");
+	kernel.taskRaw2Running(0);
 }
 
 void boot()
