@@ -30,7 +30,7 @@ void setup()
 	}
 	Serial.print("Initializing kernel...\n");
 	kernelInit();
-	taskCreate(&boot, (uint16_t)512, (char*)0);
+	kernel.taskCreate(&boot, (uint16_t)1024, (char*)0);
 	kernel.taskRaw2Running(0);
 }
 
@@ -39,24 +39,22 @@ void boot()
 	Serial.print("Done!\n");
 	Serial.flush();
 	sei();//set enabled interrupts. Sets global interrupt mask.
-	taskCreate(&testFunc, 256, (char*)0);
-	taskCreate(&testFunc2, 256, (char*)0);
-	taskCreate(&testFunc3, 256, (char*)0);
+	kernel.taskCreate(&testFunc, 256, (char*)0);
+	kernel.taskCreate(&testFunc2, 256, (char*)0);
+	kernel.taskCreate(&testFunc3, 256, (char*)0);
 	for(uint16_t i=0; i<200; i++)
 	{
 		serialPrint(i);
 		serialPrint('\n');
 	}
-	//taskTerminate(1);
-	taskTerminate(3);
+	kernel.taskTerminate(2);
+	kernel.taskTerminate(3);
 	//call sh
+	kernel.shInit();
 	while(true){
-		continue;
+		sh.getInput(serialBuf, SERIAL_BUF_SIZE);
+		sh.exec(serialBuf, SERIAL_BUF_SIZE);
 	}
 }
 
-void loop()
-{
-	//shGetInput(serialBuf, SERIAL_BUF_SIZE);
-	//sh(serialBuf, SERIAL_BUF_SIZE);
-}
+void loop(){}

@@ -1,25 +1,6 @@
 #define MAX_ARGUMENTS 8
-
-void shGetInput(char* buf, unsigned char bufSize)
-{
-	serialPrint("> ");
-	serialRead(buf, bufSize);
-	serialPrint(buf);
-	serialPrint("\n");
-}
-
-void ramDump()
-{
-	Serial.write('\n');
-	for(uint8_t* i=0x0000; i<RAMEND-1; i++)
-	{
-		Serial.write(*i);
-	}
-	Serial.write('\n');
-	Serial.flush();
-}
-
-unsigned char isAlphanumeric(char c)
+//defined here, but a useful global function
+uint8_t isAlphanumeric(char c)
 {
 	if((c>=48 && c<=57)||(c>=65 && c<=90)||(c>=97 && c<=122))
 	{
@@ -31,19 +12,34 @@ unsigned char isAlphanumeric(char c)
 	}
 }
 
+typedef struct sh_
+{
+	void (*getInput)(char*, uint8_t);
+	void (*exec)(char*, uint8_t);
+} sh_T;
+sh_ sh;
+
+void shGetInput(char* buf, uint8_t bufSize)
+{
+	serialPrint("> ");
+	serialRead(buf, bufSize);
+	serialPrint(buf);
+	serialPrint("\n");
+}
+
 unsigned char edit(char* file)
 {
 }
 
-void sh(char* buf, unsigned char bufSize)
+void shExec(char* buf, uint8_t bufSize)
 {
 	char cmd[MAX_ARGUMENTS][SERIAL_BUF_SIZE];
 	if(buf[0]=='\0'){
 		return;}
 	{
-	unsigned char i;
-	unsigned char j=0;
-	unsigned char k=0;
+	uint8_t i;
+	uint8_t j=0;
+	uint8_t k=0;
 	for(i=0; buf[i]!='\0'; i++)
 	{
 		if(isAlphanumeric(buf[i]))
@@ -67,8 +63,8 @@ void sh(char* buf, unsigned char bufSize)
 	}
 	cmd[j][k]='\0';
 	}
-	unsigned char numberArgs=1;
-	for(unsigned char i=0; buf[i]!='\0'; i++)
+	uint8_t numberArgs=1;
+	for(uint8_t i=0; buf[i]!='\0'; i++)
 	{
 		if(buf[i]==' ')
 		{
@@ -95,4 +91,21 @@ void sh(char* buf, unsigned char bufSize)
 	serialPrint("\n");
 	}
 */
+}
+
+void shInit_()
+{
+	sh.getInput = &shGetInput;
+	sh.exec = &shExec;
+}
+
+void ramDump()
+{
+	Serial.write('\n');
+	for(uint8_t* i=0x0000; i<RAMEND-1; i++)
+	{
+		Serial.write(*i);
+	}
+	Serial.write('\n');
+	Serial.flush();
 }
