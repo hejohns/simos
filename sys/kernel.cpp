@@ -77,21 +77,21 @@
 const char taskHeader[] = "task header";
 const char taskFooter[] = "task footer";
 
-typedef enum state__
+typedef enum state_
 {
 	terminated,
 	raw,
 	ready,
 	running,
 	stopped
-} state_;
+} state_T;
 
-typedef struct task
+typedef struct task_
 {
 	char header[strlen(taskHeader)+1];
 	void* sTop;
 	void* sp; //stack pointer
-	state_ state;
+	state_T state;
 	char footer[strlen(taskFooter)+1];
 }task;
 
@@ -106,37 +106,21 @@ typedef struct kernel_T
 	uint8_t running;
 	task tasks[8];
 	char footer[strlen(kernelFooter)+1];
+	void (*taskRunning2Ready)(uint8_t);
+	void (*taskReady2Running)(uint8_t);
+	void (*taskRaw2Running)(uint8_t);
+	void (*taskCreate)(void(*)(void*), uint16_t, char*);
+	void (*taskTerminate)(uint8_t);
+	void (*taskStop)(uint8_t);
+	void (*taskResume)(uint8_t);
+	void (*shInit)();
 }kernel_T;
 kernel_T kernel;
-
-void kernelInit()//uint16_t idletask_stack)
-{
-	//set up timer 1
-	TCCR1A = 0b00000000; //normal operation- disconnect OC1, disable pwm
-	TCCR1B = 0b00001100; //reset counter on overflow, prescaler=256
-	TIMSK1 = 0b00000010; //output compare (OCIE1A) bit set
-	OCR1AH = 0x34;//100ms=6250 counts at 256 scale
-	OCR1AL = 0xBC;//set to 200ms slices
-	strcpy(kernel.header, kernelHeader);
-	strcpy(kernel.footer, kernelFooter);
-	kernel.memptr = (void*)(RAMEND-128);
-	kernel.nbrOfTasks = 0;
-	kernel.running = 0;
-	TCNT1 = 0x0000; //reset counter 1 (register of timer 1)
-}
-
-void taskDestroy(uint8_t taskNumber)
-{
-	task* taskN = &kernel.tasks[taskNumber];
-	kernel.memptr = taskN->sTop;
-	kernel.nbrOfTasks--;
-}
-
-#define taskRunning2Ready(x) kernel.tasks[x].state=ready
-
-#define taskReady2Running(x) kernel.tasks[x].state=running
-
-#define taskRaw2Running(x) \
+/* 
+ * taskRaw2Running is defined as a macro to avoid call/push instruction
+ * getting in the way of pop z regs
+ */
+//#define taskRaw2Running(x) \
 			kernel.tasks[x].state = running;\
 			kernel.running = x;\
 			SP = kernel.tasks[x].sp;\
@@ -146,131 +130,47 @@ void taskDestroy(uint8_t taskNumber)
 			"pop r30");\
 			TCNT1 = 0x0000
 
-void panic()
+void taskRunning2Ready_(uint8_t taskNumber)
 {
-	cli();
-	serialPrint("Kernel panic!\nJumping to bootloader...\n");
-	goto *0x0000;
+	kernel.tasks[taskNumber].state = ready;
 }
-
-//called by timer interrupt. The "meat" of the kernel.
-ISR(TIMER1_COMPA_vect, ISR_NAKED)
+void taskReady2Running_(uint8_t taskNumber)
 {
-	//prologue
-	cli();
-	contextPush();
-	//serialPrint((uint16_t)kernel.tasks[kernel.running].sp);
-	kernel.tasks[kernel.running].sp = SP;
-	/*
-	serialPrint("Running:");
-	serialPrint(kernel.running);
-	serialPrint(',');
-	serialPrint(kernel.nbrOfTasks);
-	serialPrint(',');
-	serialPrint((uint16_t)(kernel.tasks[kernel.running].sp));
-	serialPrint("memptr:");
-	serialPrint((uint16_t)kernel.memptr);
-	serialPrint(',');
-	serialPrint((uint16_t)SP);
-	serialPrint("\n");
-	*/
-	uint8_t runNext;
-	//pop terminated tasks off kernel task stack
-	/*
-	for(int8_t i=kernel.nbrOfTasks-1; i>=0; i--){
-		task* taskN = &kernel.tasks[i];
-		if(taskN->state == terminated){
-			taskDestroy(i);
-			continue;}
-		else{
-			break;
-		}
-	}
-	*/
-	//Round Robin scheduler
-	if(kernel.nbrOfTasks <= 0){
-		panic();
-	}
-	else if(kernel.nbrOfTasks == 1){
-		runNext=0;
-	}
-	else{
-		uint8_t i = kernel.running+1;
-		do{
-			//check i bounds
-			if(i == kernel.nbrOfTasks){
-				i=0;
-				continue;
-			}
-			//process based on state
-			task* taskN = &kernel.tasks[i];
-			if(taskN->state == stopped){
-				i++;
-				continue;
-			}
-			else if(taskN->state == ready){
-				//serialPrint("trigger\n");
-				//serialPrint(i);
-				//serialPrint(kernel.running);
-				//serialPrint(kernel.tasks[kernel.running].state);
-				taskRunning2Ready(kernel.running);
-				taskReady2Running(i);
-				kernel.running = i;
-				//serialPrint(kernel.running);
-				runNext = i;
-				break;
-			}
-			else if(taskN->state == raw){
-				//serialPrint(kernel.running);
-				//serialPrint(i);
-				taskRunning2Ready(kernel.running);
-				//serialPrint(kernel.tasks[0].state);
-				taskRaw2Running(i);
-				sei();
-				asm("ijmp");
-			}
-			else
-			{
-				//serialPrint(kernel.running);
-				//serialPrint(i);
-				//serialPrint(kernel.tasks[i].state);
-				//serialPrint("Scheduler Failure\n");
-				panic();
-			}
-		} while(true);
-	}
-	//epilogue
-	/*
-	serialPrint((uint16_t)(kernel.tasks[0].sp));
-	serialPrint('.');
-	serialPrint((uint16_t)(kernel.running));
-	serialPrint("\n");
-	*/
-	SP = kernel.tasks[runNext].sp;
+	kernel.tasks[taskNumber].state = running;
+}
+void taskRaw2Running_(uint8_t taskNumber)
+{
+	asm(
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__");
+	kernel.tasks[taskNumber].state = running;
+	kernel.running = taskNumber;
+	SP = kernel.tasks[taskNumber].sp;
 	contextPop();
+	asm(
+	"pop r31\n\t"
+	"pop r30");
 	TCNT1 = 0x0000;
-	reti();
+	sei();
+	asm("ijmp");
 }
-
-//all functions below to be called by user
-void taskCreate(void(* func)(void*), uint16_t stacksize, char* args)
+void taskCreate_(void(* func)(void*), uint16_t stacksize, char* args)
 {
-	/*
-	serialPrint("memptrBegin:");
-	serialPrint((uint16_t)kernel.memptr);
-	serialPrint("\n");
-	*/
 	void* sp;
 	uint16_t i;
 
 	//initialize stack
-	//note- stack grows down
+	//note: stack grows down
 	task* taskN = &kernel.tasks[kernel.nbrOfTasks];
 	kernel.nbrOfTasks++;
 	taskN->sTop = kernel.memptr;
 	sp = kernel.memptr;
-	*(uint8_t*)(sp--) = lo8(func); //store PC(lo). for icall
-	*(uint8_t*)(sp--) = hi8(func); //store PC(hi).
+	*(uint8_t*)(sp--) = lo8(func); //store PC for icall
+	*(uint8_t*)(sp--) = hi8(func);
 	for(i=0; i<=23; i++){
 		*(uint8_t*)(sp--) = 0x00;}
 	//save args in r24:25 (input arguments stored in these registers)
@@ -289,40 +189,134 @@ void taskCreate(void(* func)(void*), uint16_t stacksize, char* args)
 	strcpy(taskN->footer, taskFooter);
 	taskN->state = raw;
 	taskN->sp = sp;
-	/*
-	serialPrint((uint16_t)sp);
-	serialPrint(",memptrEnd:");
-	serialPrint((uint16_t)kernel.memptr);
-	serialPrint("\n");
-	*/
 	TCNT1 = 0x0000;
 }
-
-void taskTerminate(uint8_t taskNumber)
+void taskTerminate_(uint8_t taskNumber)
 {
 	cli();
 	kernel.tasks[taskNumber].state = terminated;
 	sei();
 }
-
-void taskStop(uint8_t taskNumber)
+void taskStop_(uint8_t taskNumber)
 {
 	cli();
 	kernel.tasks[taskNumber].state = stopped;
 	sei();
 }
-
-void taskResume(uint8_t taskNumber)
+void taskResume_(uint8_t taskNumber)
 {
 	cli();
 	kernel.tasks[taskNumber].state = ready;
 	sei();
 }
+//functions below NOT to be called by user, hence they're not members of kernel
+void taskDestroy_(uint8_t taskNumber)
+{
+	task* taskN = &kernel.tasks[taskNumber];
+	kernel.memptr = taskN->sTop;
+	kernel.nbrOfTasks--;
+}
+void panic()
+{
+	cli();
+	serialPrint("Kernel panic!\nJumping to bootloader...\n");
+	goto *0x0000;
+}
+
+void kernelInit()//uint16_t idletask_stack)
+{
+	//set up timer 1
+	TCCR1A = 0b00000000; //normal operation- disconnect OC1, disable pwm
+	TCCR1B = 0b00001100; //reset counter on overflow, prescaler=256
+	TIMSK1 = 0b00000010; //output compare (OCIE1A) bit set
+	OCR1AH = 0x34; //100ms=6250 counts at 256 scale
+	OCR1AL = 0xBC; //set to 200ms slices
+	strcpy(kernel.header, kernelHeader);
+	strcpy(kernel.footer, kernelFooter);
+	kernel.memptr = (void*)(RAMEND-128);
+	kernel.nbrOfTasks = 0;
+	kernel.running = 0;
+	kernel.taskRunning2Ready = &taskRunning2Ready_;
+	kernel.taskReady2Running = &taskReady2Running_;
+	kernel.taskRaw2Running = &taskRaw2Running_;
+	kernel.taskCreate = &taskCreate_;
+	kernel.taskTerminate = &taskTerminate_;
+	kernel.taskStop = &taskStop_;
+	kernel.taskResume = &taskResume_;
+	kernel.shInit = &shInit_;
+	TCNT1 = 0x0000; //reset counter 1 (register of timer 1)
+}
+
+//called by timer interrupt. The "meat" of the kernel.
+ISR(TIMER1_COMPA_vect, ISR_NAKED)
+{
+	//prologue
+	cli();
+	contextPush();
+	kernel.tasks[kernel.running].sp = SP;
+	uint8_t runNext;
+	//pop terminated tasks off kernel task stack
+	for(int8_t i=kernel.nbrOfTasks-1; i>=0; i--){
+		task* taskN = &kernel.tasks[i];
+		if(taskN->state == terminated){
+			taskDestroy_(i);
+			continue;
+		}
+		else{
+			break;
+		}
+	}
+	//Round Robin scheduler
+	if(kernel.nbrOfTasks <= 0){
+		panic();
+	}
+	else if(kernel.nbrOfTasks == 1){
+		runNext = 0;
+	}
+	else{
+		uint8_t i = kernel.running+1;
+		do{
+			//check i bounds
+			if(i == kernel.nbrOfTasks){
+				i=0;
+				continue;
+			}
+			//process based on state
+			task* taskN = &kernel.tasks[i];
+			if(taskN->state == stopped){
+				i++;
+				continue;
+			}
+			else if(taskN->state == ready){
+				kernel.taskRunning2Ready(kernel.running);
+				kernel.taskReady2Running(i);
+				kernel.running = i;
+				runNext = i;
+				break;
+			}
+			else if(taskN->state == raw){
+				kernel.taskRunning2Ready(kernel.running);
+				kernel.taskRaw2Running(i);
+			}
+			else
+			{
+				serialPrint("Scheduler Failure\n");
+				panic();
+			}
+		} while(true);
+	}
+	//epilogue
+	SP = kernel.tasks[runNext].sp;
+	contextPop();
+	TCNT1 = 0x0000;
+	reti();
+}
 
 ISR(BADISR_vect)
 {
 	cli();
-	serialPrint("Catch-all interrupt triggered\n");
+	Serial.print("Catch-all interrupt triggered\n");
+	Serial.flush();
 	ramDump();
 	panic();
 }
