@@ -42,13 +42,8 @@ void boot()
 	kernel.taskCreate(&testFunc, 256, (char*)0);
 	kernel.taskCreate(&testFunc2, 256, (char*)0);
 	kernel.taskCreate(&testFunc3, 256, (char*)0);
-	for(uint16_t i=0; i<200; i++)
-	{
-		serialPrint(i);
-		serialPrint('\n');
-	}
-	kernel.taskTerminate(2);
-	kernel.taskTerminate(3);
+	//kernel.taskTerminate(2);
+	//kernel.taskTerminate(3);
 	//call sh
 	kernel.shInit();
 	while(true){

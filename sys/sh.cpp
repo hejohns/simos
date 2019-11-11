@@ -1,4 +1,5 @@
 #define MAX_ARGUMENTS 8
+
 //defined here, but a useful global function
 uint8_t isAlphanumeric(char c)
 {
@@ -16,8 +17,9 @@ typedef struct sh_
 {
 	void (*getInput)(char*, uint8_t);
 	void (*exec)(char*, uint8_t);
+	void (*taskDefsInit)();
 } sh_T;
-sh_ sh;
+sh_T sh;
 
 void shGetInput(char* buf, uint8_t bufSize)
 {
@@ -74,10 +76,23 @@ void shExec(char* buf, uint8_t bufSize)
 	if(strcmp(cmd[0],"exec")==0)
 	{
 		serialPrint("exec\n");
+		cli();
+		kernel.taskCreate(taskDefs[3].fp, 256, (char*)0);
+		sei();
 	}
 	else if(strcmp(cmd[0],"edit")==0)
 	{
 		serialPrint("edit\n");
+	}
+	else if(strcmp(cmd[0],"status")==0)
+	{
+		serialPrint((uint16_t)kernel.memptr);
+		serialPrint('\n');
+	}
+	else if(strcmp(cmd[0],"reboot")==0)
+	{
+		serialPrint("rebooting...\n");
+		goto *0x0000;
 	}
 	else
 	{
@@ -97,6 +112,8 @@ void shInit_()
 {
 	sh.getInput = &shGetInput;
 	sh.exec = &shExec;
+	sh.taskDefsInit = &taskDefsInit_;
+	sh.taskDefsInit();
 }
 
 void ramDump()
