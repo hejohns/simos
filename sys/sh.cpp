@@ -3,17 +3,15 @@
 //defined here, but a useful global function
 uint8_t isAlphanumeric(char c)
 {
-	if((c>=48 && c<=57)||(c>=65 && c<=90)||(c>=97 && c<=122))
-	{
+	if((c>=48 && c<=57)||(c>=65 && c<=90)||(c>=97 && c<=122)){
 		return 1;
 	}
-	else
-	{
+	else{
 		return 0;
 	}
 }
 
-typedef struct sh_
+typedef struct sh
 {
 	void (*getInput)(char*, uint8_t);
 	void (*exec)(char*, uint8_t);
@@ -75,10 +73,24 @@ void shExec(char* buf, uint8_t bufSize)
 	}
 	if(strcmp(cmd[0],"exec")==0)
 	{
-		serialPrint("exec\n");
-		cli();
-		kernel.taskCreate(taskDefs[3].fp, 256, (char*)0);
-		sei();
+		uint8_t taskid;
+		for(uint8_t i=0; i<MAX_TASK_DEFS; i++){
+			if(strcmp(taskDefs.task[i].name, cmd[1])==0){
+				taskid=i;
+				cli();
+				kernel.taskCreate(taskDefs.task[taskid].fp, 256, (char*)0);
+				sei();
+				break;
+			}
+		}
+	}
+	else if(strcmp(cmd[0],"help")==0)
+	{
+		serialPrint("List of commands:\n");
+		for(uint8_t i=0; i<taskDefs.nbrOfTaskDefs; i++){
+			serialPrint(taskDefs.task[i].name);
+			serialPrint('\n');
+		}
 	}
 	else if(strcmp(cmd[0],"edit")==0)
 	{
@@ -86,7 +98,11 @@ void shExec(char* buf, uint8_t bufSize)
 	}
 	else if(strcmp(cmd[0],"status")==0)
 	{
+		serialPrint("Kernel.memptr: ");
 		serialPrint((uint16_t)kernel.memptr);
+		serialPrint('\n');
+		serialPrint("kernel.nbrOfTasks: ");
+		serialPrint(kernel.nbrOfTasks);
 		serialPrint('\n');
 	}
 	else if(strcmp(cmd[0],"reboot")==0)
@@ -99,21 +115,13 @@ void shExec(char* buf, uint8_t bufSize)
 		Serial.write(cmd[0]);
 		serialPrint(" is not a valid command\n");
 	}
-/* debugging
-	for(int i=0; i<numberArgs; i++)
-	{
-	serialPrint(cmd[i]);
-	serialPrint("\n");
-	}
-*/
 }
 
 void shInit_()
 {
 	sh.getInput = &shGetInput;
 	sh.exec = &shExec;
-	sh.taskDefsInit = &taskDefsInit_;
-	sh.taskDefsInit();
+	taskDefsInit();
 }
 
 void ramDump()

@@ -29,7 +29,9 @@ void setup()
 		char tmp = Serial.read();
 	}
 	Serial.print("Initializing kernel...\n");
-	kernelInit();
+	//void kernelInit(uint16_t stackReserve)
+	//whats the minimum safe stackReserve? Using 128 bytes now just to be cautious
+	kernelInit(128);
 	kernel.taskCreate(&boot, (uint16_t)1024, (char*)0);
 	kernel.taskRaw2Running(0);
 }
