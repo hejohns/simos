@@ -74,48 +74,6 @@
 		"pop __zero_reg__\n\t"\
 		"pop __tmp_reg__")
 
-/* 
- * taskRaw2Running is defined as a macro to avoid call/push instruction
- * getting in the way of pop z regs
- */
-//#define taskRaw2Running(x) \
-			kernel.tasks[x].state = running;\
-			kernel.running = x;\
-			SP = kernel.tasks[x].sp;\
-			contextPop();\
-			asm(\
-			"pop r31\n\t"\
-			"pop r30");\
-			TCNT1 = 0x0000
-
-void taskRunning2Ready_(uint8_t taskNumber)
-{
-	kernel.tasks[taskNumber].state = ready;
-}
-void taskReady2Running_(uint8_t taskNumber)
-{
-	kernel.tasks[taskNumber].state = running;
-}
-void taskRaw2Running_(uint8_t taskNumber)
-{
-	asm(
-	"pop __tmp_reg__\n\t"
-	"pop __tmp_reg__\n\t"
-	"pop __tmp_reg__\n\t"
-	"pop __tmp_reg__\n\t"
-	"pop __tmp_reg__\n\t"
-	"pop __tmp_reg__");
-	kernel.tasks[taskNumber].state = running;
-	kernel.running = taskNumber;
-	SP = kernel.tasks[taskNumber].sp;
-	contextPop();
-	asm(
-	"pop r31\n\t"
-	"pop r30");
-	TCNT1 = 0x0000;
-	sei();
-	asm("ijmp");
-}
 void taskCreate_(void(* func)(void*), uint16_t stacksize, char* args)
 {
 	void* sp;
@@ -147,6 +105,7 @@ void taskCreate_(void(* func)(void*), uint16_t stacksize, char* args)
 	strcpy(taskN->footer, taskFooter);
 	taskN->state = raw;
 	taskN->sp = sp;
+	//delete line 140?
 	TCNT1 = 0x0000;
 }
 void taskTerminate_(uint8_t taskNumber)
@@ -167,7 +126,38 @@ void taskResume_(uint8_t taskNumber)
 	kernel.tasks[taskNumber].state = ready;
 	sei();
 }
-//functions below NOT to be called by user, hence they're not members of kernel
+//functions below NOT to be called by user
+void taskRunning2Ready_(uint8_t taskNumber)
+{
+	kernel.tasks[taskNumber].state = ready;
+}
+void taskReady2Running_(uint8_t taskNumber)
+{
+	kernel.tasks[taskNumber].state = running;
+}
+void taskRaw2Running_(uint8_t taskNumber)
+{
+	//destroy frames pushed onto stack by C function call
+	//(otherwise jmp leaves these frames behind, littering the stack) 
+	asm(
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__\n\t"
+	"pop __tmp_reg__");
+
+	kernel.tasks[taskNumber].state = running;
+	kernel.running = taskNumber;
+	SP = kernel.tasks[taskNumber].sp;
+	contextPop();
+	asm(
+	"pop r31\n\t"
+	"pop r30");
+	TCNT1 = 0x0000;
+	sei();
+	asm("ijmp");
+}
 void taskDestroy_(uint8_t taskNumber)
 {
 	task* taskN = &kernel.tasks[taskNumber];
@@ -181,7 +171,7 @@ void panic()
 	goto *0x0000;
 }
 
-void kernelInit()//uint16_t idletask_stack)
+void kernelInit(uint16_t stackReserve)
 {
 	//set up timer 1
 	TCCR1A = 0b00000000; //normal operation- disconnect OC1, disable pwm
@@ -191,7 +181,7 @@ void kernelInit()//uint16_t idletask_stack)
 	OCR1AL = 0xBC; //set to 200ms slices
 	strcpy(kernel.header, kernelHeader);
 	strcpy(kernel.footer, kernelFooter);
-	kernel.memptr = (void*)(RAMEND-128);
+	kernel.memptr = (void*)(RAMEND-stackReserve);
 	kernel.nbrOfTasks = 0;
 	kernel.running = 0;
 	kernel.taskRunning2Ready = &taskRunning2Ready_;
@@ -201,6 +191,7 @@ void kernelInit()//uint16_t idletask_stack)
 	kernel.taskTerminate = &taskTerminate_;
 	kernel.taskStop = &taskStop_;
 	kernel.taskResume = &taskResume_;
+	kernel.taskDestroy = &taskDestroy_;
 	kernel.shInit = &shInit_;
 	TCNT1 = 0x0000; //reset counter 1 (register of timer 1)
 }
@@ -217,7 +208,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 	for(int8_t i=kernel.nbrOfTasks-1; i>=0; i--){
 		task* taskN = &kernel.tasks[i];
 		if(taskN->state == terminated){
-			taskDestroy_(i);
+			kernel.taskDestroy(i);
 			continue;
 		}
 		else{
@@ -270,6 +261,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 	reti();
 }
 
+//if called, something very bad has happened
 ISR(BADISR_vect)
 {
 	cli();
