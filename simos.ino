@@ -41,7 +41,7 @@ void boot()
 	Serial.print("Done!\n");
 	Serial.flush();
 	sei();//set enabled interrupts. Sets global interrupt mask.
-	kernel.taskCreate(&testFunc, 256, (char*)0);
+	kernel.taskCreate(&testFunc, 256, "SUCCESS");
 	kernel.taskCreate(&testFunc2, 256, (char*)0);
 	kernel.taskCreate(&testFunc3, 256, (char*)0);
 	//kernel.taskTerminate(2);

@@ -1,4 +1,5 @@
 #define MAX_ARGUMENTS 8
+#define SH_ARGSBUF_MAX 2
 
 //defined here, but a useful global function
 uint8_t isAlphanumeric(char c)
@@ -16,6 +17,7 @@ typedef struct sh
 	void (*getInput)(char*, uint8_t);
 	void (*exec)(char*, uint8_t);
 	void (*taskDefsInit)();
+	char argsBuf[SH_ARGSBUF_MAX][SERIAL_BUF_SIZE];
 } sh_T;
 sh_T sh;
 
@@ -73,20 +75,41 @@ void shExec(char* buf, uint8_t bufSize)
 	}
 	if(strcmp(cmd[0],"exec")==0)
 	{
-		uint8_t taskid;
+		int8_t taskid= -1;
 		for(uint8_t i=0; i<MAX_TASK_DEFS; i++){
 			if(strcmp(taskDefs.task[i].name, cmd[1])==0){
 				taskid=i;
+				char args[SERIAL_BUF_SIZE]="";
+				for(uint8_t i=2; i<numberArgs; i++){
+					strncat(args, cmd[i], SERIAL_BUF_SIZE);
+					strcat(args, " ");
+				}
+				strncpy(sh.argsBuf[0], args, SERIAL_BUF_SIZE);
 				cli();
-				kernel.taskCreate(taskDefs.task[taskid].fp, 256, (char*)0);
+				kernel.taskCreate(taskDefs.task[taskid].fp, 256, sh.argsBuf[0]);
 				sei();
 				break;
 			}
 		}
+		if(taskid==-1){
+			if(numberArgs==1){
+				serialPrint("usage: exec [task]\nType 'tasks' to list all tasks\n");
+			}
+			else{
+				serialPrint('\'');
+				serialPrint(cmd[1]);
+				serialPrint('\'');
+				serialPrint(" is not a valid task\n");
+			}
+		}
 	}
-	else if(strcmp(cmd[0],"help")==0)
-	{
+	else if(strcmp(cmd[0],"help")==0){
 		serialPrint("List of commands:\n");
+		serialPrint("edit\nhelp\nstatus\n");
+	}
+	else if(strcmp(cmd[0],"tasks")==0)
+	{
+		serialPrint("List of tasks:\n");
 		for(uint8_t i=0; i<taskDefs.nbrOfTaskDefs; i++){
 			serialPrint(taskDefs.task[i].name);
 			serialPrint('\n');
