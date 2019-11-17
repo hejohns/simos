@@ -1,12 +1,30 @@
 #define MAX_TASK_DEFS 4
 #define MAX_TASK_NAME_LEN 16
 
-void testFunc()
+/*
+ * ALWAYS SAVE ARGS IMMEDIATELY
+ *
+ * There is limited space reserved in sh.argsBuf for passing arguments
+ * copy the string point to by char* arg as a stack variable
+ * sh.args.Buf is left up to the user to decide how to allocate
+ * Note- do not create more tasks back to back than SH_ARGSBUF_MAX has space for
+ * otherwise, your tasks will not have a chance to copy the args before 
+ * sh.argsBuf gets overwritten
+ */
+
+uint8_t isAlphanumeric(char);
+
+void testFunc(char* arg)
 {
-	for(uint16_t i=0; ; i++)
-	{
-		asm("nop");
-	}
+	cli();
+	uint8_t argLength;
+	for(argLength=0; isAlphanumeric(arg[argLength]) || arg[argLength] == ' '; argLength++){}
+	char args[argLength+1];
+	strncpy(args, arg, argLength);
+	sei();
+	serialPrint(args);
+	serialPrint('\n');
+	while(true){}
 }
 void testFunc2()
 {
