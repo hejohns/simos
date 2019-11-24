@@ -24,6 +24,8 @@ void testFunc(char* arg)
 	sei();
 	serialPrint(args);
 	serialPrint('\n');
+	//serialPrint(kernel.running);
+	kernel.tasks[kernel.running].state = terminated;
 	while(true){}
 }
 void testFunc2()
@@ -35,10 +37,12 @@ void testFunc2()
 }
 void testFunc3()
 {
-	for(uint16_t i=0; ; i++)
+	for(uint16_t i=0; i<5000; i++)
 	{
 		asm("nop");
 	}
+	kernel.tasks[kernel.running].state = terminated;
+	while(true){}
 }
 
 void testFunc4()
