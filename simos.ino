@@ -6,8 +6,8 @@
 #include <string.h>
 #include "sys/fs.cpp"
 #include "sys/serial.cpp"
-#include "sys/tasks.cpp"
 #include "sys/kernel.h"
+#include "sys/tasks.cpp"
 #include "sys/sh.cpp"
 #include "sys/kernel.cpp"
 
@@ -41,10 +41,10 @@ void boot()
 	Serial.print("Done!\n");
 	Serial.flush();
 	sei();//set enabled interrupts. Sets global interrupt mask.
-	kernel.taskCreate(&testFunc, 256, "SUCCESS");
+	kernel.taskCreate(&testFunc, 256, "Success");
 	kernel.taskCreate(&testFunc2, 256, (char*)0);
 	kernel.taskCreate(&testFunc3, 256, (char*)0);
-	//kernel.taskTerminate(2);
+	kernel.taskTerminate(2);
 	//kernel.taskTerminate(3);
 	//call sh
 	kernel.shInit();

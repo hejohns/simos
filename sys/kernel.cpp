@@ -226,13 +226,17 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 		uint8_t i = kernel.running+1;
 		do{
 			//check i bounds
-			if(i == kernel.nbrOfTasks){
+			if(i >= kernel.nbrOfTasks){
 				i=0;
 				continue;
 			}
 			//process based on state
 			task* taskN = &kernel.tasks[i];
 			if(taskN->state == stopped){
+				i++;
+				continue;
+			}
+			else if(taskN->state == terminated){
 				i++;
 				continue;
 			}
@@ -249,7 +253,11 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 			}
 			else
 			{
-				serialPrint("Scheduler Failure\n");
+				serialPrint("Scheduler Failure\ni: ");
+				serialPrint(i);
+				serialPrint("\ntaskN->state: ");
+				serialPrint(taskN->state);
+				serialPrint('\n');
 				panic();
 			}
 		} while(true);
