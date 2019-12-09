@@ -27,6 +27,7 @@ void shGetInput(char* buf, uint8_t bufSize)
 	serialRead(buf, bufSize);
 	serialPrint(buf);
 	serialPrint("\n");
+    	//serialFlush();
 }
 
 unsigned char edit(char* file)
@@ -35,7 +36,7 @@ unsigned char edit(char* file)
 
 void shExec(char* buf, uint8_t bufSize)
 {
-	char cmd[MAX_ARGUMENTS][SERIAL_BUF_SIZE];
+	char cmd[MAX_ARGUMENTS][SERIAL_BUF_SIZE]={'\0'};
 	if(buf[0]=='\0'){
 		return;}
 	{
