@@ -163,6 +163,9 @@ void taskDestroy_(uint8_t taskNumber)
 	task* taskN = &kernel.tasks[taskNumber];
 	kernel.memptr = taskN->sTop;
 	kernel.nbrOfTasks--;
+	serialPrint("Destroyed task ");
+	serialPrint(taskNumber);
+	serialPrint('\n');
 }
 void panic()
 {

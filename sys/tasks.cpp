@@ -74,13 +74,13 @@ void taskDefsInit()
 	for(uint8_t i=0; i<MAX_TASK_DEFS; i++){
 		taskDefs.task[i].name[0] = '\0';
 	}
-	memcpy(taskDefs.task[0].name,"testFunc",10);
+	strncpy(taskDefs.task[0].name,"testFunc", MAX_TASK_NAME_LEN);
 	taskDefs.task[0].fp = &testFunc;
-	memcpy(taskDefs.task[1].name,"testFunc2",10);
+	strncpy(taskDefs.task[1].name,"testFunc2", MAX_TASK_NAME_LEN);
 	taskDefs.task[1].fp = &testFunc2;
-	memcpy(taskDefs.task[2].name,"testFunc3",10);
+	strncpy(taskDefs.task[2].name,"testFunc3", MAX_TASK_NAME_LEN);
 	taskDefs.task[2].fp = &testFunc3;
-	memcpy(taskDefs.task[3].name,"testFunc4",10);
+	strncpy(taskDefs.task[3].name,"testFunc4", MAX_TASK_NAME_LEN);
 	taskDefs.task[3].fp = &testFunc4;
 	for(taskDefs.nbrOfTaskDefs=0; taskDefs.task[taskDefs.nbrOfTaskDefs].name[0] != '\0'; taskDefs.nbrOfTaskDefs++){}
 }
