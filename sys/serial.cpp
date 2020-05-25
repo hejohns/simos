@@ -17,10 +17,10 @@ void serialFlush()
        	Serial.flush();\
        	sei()
 
-void serialRead(char* buf, unsigned char bufSize)
+void serialRead(char* buf, uint8_t bufSize)
 {
 	cli();
-	unsigned char i=0;
+	uint8_t i=0;
 	serialFlush();
 	while(i < bufSize-1)
 	{

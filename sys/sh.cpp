@@ -30,7 +30,7 @@ void shGetInput(char* buf, uint8_t bufSize)
     	//serialFlush();
 }
 
-unsigned char edit(char* file)
+uint8_t edit(char* file)
 {
 }
 
